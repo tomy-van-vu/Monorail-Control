@@ -16,6 +16,7 @@
 
 boolean testingMode = true;
 
+
 // Globals 
 volatile boolean instructionUpdate = false;
 volatile boolean trainDirection = 0;
@@ -46,6 +47,9 @@ void setup() {
   while (!hasNewInstruction()) {
     moveTrain();
   }
+
+  // Testing multi-tabs
+  testFunction();
 }
 
 void loop() {

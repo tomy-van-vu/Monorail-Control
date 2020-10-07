@@ -1,0 +1,3 @@
+void aFunction() {
+  // comment
+}
