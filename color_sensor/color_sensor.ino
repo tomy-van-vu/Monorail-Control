@@ -1,70 +1,122 @@
+#define COLOUROUT A5
+#define COLOURS2 A4
+#define COLOURS3 A3
 
-//will need to use male to female wires for s1 and s0 
+int frequency = 0;
+int color;
 
-#define S0 4
-#define S1 5
-#define S2 6
-#define S3 7
-#define sensorOut 8
-
-int redfrequency = 0;
-int greenfrequency = 0;
-int bluefrequency = 0;
 
 void setup() {
-  pinMode(S0, OUTPUT);
-  pinMode(S1, OUTPUT);
-  pinMode(S2, OUTPUT);
-  pinMode(S3, OUTPUT);
-  pinMode(sensorOut, INPUT);
-  
-  // Setting frequency-scaling to 20%
-  digitalWrite(S0,HIGH);
-  digitalWrite(S1,LOW);
-  Serial.begin(9600);
+ pinMode(COLOUROUT,INPUT);
+ pinMode(COLOURS2,OUTPUT);
+ pinMode(COLOURS3,OUTPUT);
+ Serial.begin(9600);
 }
 
 void loop() {
+  /*
+  //Calibration Code
   // Setting red filtered photodiodes to be read
-  digitalWrite(S2,LOW);
-  digitalWrite(S3,LOW);
+  digitalWrite(COLOURS2, LOW);
+  digitalWrite(COLOURS3, LOW);
   // Reading the output frequency
-   redfrequency = pulseIn(sensorOut, LOW);
-   Serial.print("Red: ");
-   Serial.print(redfrequency);
-   delay(100);
-
-  // Setting Green filtered photodiodes to be read
-  digitalWrite(S2,HIGH);
-  digitalWrite(S3,HIGH);
-  // Reading the output frequency
-  greenfrequency = pulseIn(sensorOut, LOW);
+  frequency = pulseIn(COLOUROUT, LOW);
+  int R = frequency;
   // Printing the value on the serial monitor
-     Serial.print(" Green: ");
-   Serial.print(redfrequency);
+  Serial.print("R= ");//printing name
+  Serial.print(frequency);//printing RED color frequency
+  Serial.print("  ");
   delay(100);
 
-  // Setting Blue filtered photodiodes to be read
-  digitalWrite(S2,LOW);
-  digitalWrite(S3,HIGH);
+    // Setting Green filtered photodiodes to be read
+  digitalWrite(COLOURS2, HIGH);
+  digitalWrite(COLOURS3, HIGH);
   // Reading the output frequency
-  bluefrequency = pulseIn(sensorOut, LOW);
-     Serial.print(" Blue: ");
-   Serial.print(redfrequency);
+  frequency = pulseIn(COLOUROUT, LOW);
+  int G = frequency;
+  // Printing the value on the serial monitor
+  Serial.print("G= ");//printing name
+  Serial.print(frequency);//printing RED color frequency
+  Serial.print("  ");
+  delay(100);
+  
+  // Setting Blue filtered photodiodes to be read
+  digitalWrite(COLOURS2, LOW);
+  digitalWrite(COLOURS3, HIGH);
+  // Reading the output frequency
+  frequency = pulseIn(COLOUROUT, LOW);
+  int B = frequency;
+  // Printing the value on the serial monitor
+  Serial.print("B= ");//printing name
+  Serial.print(frequency);//printing RED color frequency
+  Serial.println("  ");
+  delay(100);
+*/
+  
+  
+  color = readColor();
+  delay(10);
+  
+  Serial.print(" Color=");
+  Serial.print(color);
+  Serial.print(" ");
+  delay(50);
+}
+
+
+int readColor() {
+  // Setting red filtered photodiodes to be read
+  digitalWrite(COLOURS2, LOW);
+  digitalWrite(COLOURS3, LOW);
+  // Reading the output frequency
+  frequency = pulseIn(COLOUROUT, LOW);
+  int R = frequency;
+  // Printing the value on the serial monitor
+  Serial.print("R= ");//printing name
+  Serial.print(frequency);//printing RED color frequency
+  Serial.print("  ");
   delay(100);
 
+    // Setting Green filtered photodiodes to be read
+  digitalWrite(COLOURS2, HIGH);
+  digitalWrite(COLOURS3, HIGH);
+  // Reading the output frequency
+  frequency = pulseIn(COLOUROUT, LOW);
+  int G = frequency;
+  // Printing the value on the serial monitor
+  Serial.print("G= ");//printing name
+  Serial.print(frequency);//printing RED color frequency
+  Serial.print("  ");
+  delay(100);
+  
+  // Setting Blue filtered photodiodes to be read
+  digitalWrite(COLOURS2, LOW);
+  digitalWrite(COLOURS3, HIGH);
+  // Reading the output frequency
+  frequency = pulseIn(COLOUROUT, LOW);
+  int B = frequency;
+  // Printing the value on the serial monitor
+  Serial.print("B= ");//printing name
+  Serial.print(frequency);//printing RED color frequency
+  Serial.println("  ");
+  delay(100);
 
- if (redfrequency>25 && redfrequency< 77) { //values need to be determined
-Serial.println(" RED");
-} 
-else if (bluefrequency>25 && bluefrequency< 77) { //values need to be determined
-Serial.println(" BLUE");
-} 
-else if (greenfrequency>25 && greenfrequency< 77){ //values need to be determined
-Serial.println(" GREEN");
-}
- else {
-Serial.println(" NO COLOUR DETECTION");
+  //still need to play around with values
+  if(R<19 & R>6 & G<18 & G>6) {
+    color = 1; // Red
+  }
+  if(G<56 & G>9 & B<58 & B>17){
+    color = 2; // Green
+  }
+  if(R<95 & R>35 & G == 35 & B<75 & B>22){
+    color = 3; // Blue
+  }
+  if(R<11 & R>4 & G<12 & G>6 & B<20 & B>12){
+    color = 4; // Yellow
+  }
+    color = 0; 
+
+  return color;  
+  
 }
 
-}
