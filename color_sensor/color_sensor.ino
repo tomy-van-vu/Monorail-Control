@@ -62,14 +62,24 @@ int readColor() {
   delay(20);
 
   //need to play around with values
-  if(R>3 & R<10 & G>18 & G<30 & B>10 & B<29) {
+  if(R>5 & R<20 & G>21 & G< 65 & B>20 & B<50) {
     color = 1; // Red
   }
 
-  else if(R>17 & R<31 & G>17 & G<28 & B>10 & B<18){
+  else if(R>21 & R<40 & G>11 & G<28 & B>7 & B<18){
     color = 2;  //Blue
   }
-
+ 
+ //Need to test
+  else if(R>18 & R<30 & G>15 & G<27 & B>9 & B<17){
+    color = 3;  //Green
+  }
+ 
+ //Need to test
+  else if(R>15 & R<25 & G>12 & G<28 & B>10 & B<15){
+   color = 4;   //Yellow
+  }
+ 
   else {
   color = 0; 
   }
