@@ -86,12 +86,3 @@ int readColor() {
   
   return color;  
 }
-
-/*void start (int colourInput){
-  if(colourInput == 1){ 
-    //Run x program
-  } else{
-    if
-  }
-}
-*/
