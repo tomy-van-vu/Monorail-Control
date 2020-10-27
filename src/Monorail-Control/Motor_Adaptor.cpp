@@ -18,12 +18,25 @@ void motor_init() {
   fast_speed = 255;
 }
 
+
+bool motor_e_stop(SM_motor *sm) {
+  ///// for testing without hardware
+  return true;
+  
+  bool success = false;
+  success = my_motor.Stop();
+  return success;
+}
+
 /*
  * @desc
  * @para
  * @return
  */
 bool motor_stop(SM_motor *sm) {
+  ///// for testing without hardware
+  return true;
+  
   bool success = false;
   success = my_motor.Stop();
   return success;
@@ -37,6 +50,9 @@ bool motor_stop(SM_motor *sm) {
  * @return - bool - whether the motor has reach described state
  */
 bool motor_start(SM_motor *sm){
+  ///// for testing without hardware
+  return true;
+  
   bool success = false;
   int start_dir = direction_to_int(sm->current_direction);
   my_motor.Dir_Speed(start_dir, slow_speed);
@@ -52,6 +68,9 @@ bool motor_start(SM_motor *sm){
  * @return - bool - whether the motor has reach described state
  */
 bool motor_fast(SM_motor *sm){
+  ///// for testing without hardware
+  return true;
+  
   bool success = false;
   int start_dir = direction_to_int(sm->current_direction);
   my_motor.Dir_Speed(start_dir, slow_speed);
@@ -67,6 +86,9 @@ bool motor_fast(SM_motor *sm){
  * @return - bool - whether the motor has reach described state
  */
 bool motor_slow(SM_motor *sm){
+  ///// for testing without hardware
+  return true;
+  
   bool success = false;
   int start_dir = direction_to_int(sm->current_direction);
   my_motor.Dir_Speed(start_dir, fast_speed);

@@ -32,6 +32,7 @@ typedef struct {
 
 void motor_init();
 int direction_to_int(motor_direction);
+bool motor_e_stop(SM_motor *);
 bool motor_stop(SM_motor *);
 bool motor_start(SM_motor *);
 bool motor_fast(SM_motor *);
