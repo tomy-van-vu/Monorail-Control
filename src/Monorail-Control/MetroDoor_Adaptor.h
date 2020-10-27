@@ -1,6 +1,3 @@
-#include <Metro.h>
-#include <Servo.h>
-#include <Arduino.h>
 
 typedef enum {
   DOOR_CLOSE,
@@ -13,7 +10,6 @@ typedef struct {
 } SM_door;
 
 
-void MetroDoor(int);
 void door_init();
 bool open_door(SM_door *);
 bool close_door(SM_door *);
