@@ -1,4 +1,4 @@
-#include "CS.h"
+#include "Colour_sensor.h"
 #include <Arduino.h>
 
 // Pins
@@ -41,16 +41,15 @@ sensor_colour readColour() {
   frequency = pulseIn(COLOUROUT, LOW);
   int B = frequency;
 
-
-  //still need to play around with values
+  //need to play around with values
   if(R>5 & R<20 & G>21 & G< 65 & B>20 & B<50) {
     return CS_RED;
   }
-  else if(R>20 & R<33 & G>11 & G<24 & B>28 & B<45){
-    return CS_GREEN;
-  }
   else if(R>7 & R<40 & G>11 & G<20 & B>7 & B<14){
     return CS_BLUE;
+  }
+  else if(R>20 & R<33 & G>11 & G<24 & B>28 & B<45){
+    return CS_GREEN;
   }
   else if(R>2 & R<8 & G>5 & G<10 & B>9 & B<16){
     return CS_YELLOW;
