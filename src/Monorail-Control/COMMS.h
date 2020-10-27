@@ -12,7 +12,7 @@ typedef enum {
 } operator_instructions;
 
 // Deprecated
-// No long in use
+// No longer in use
 typedef enum{
   T_NONE,
   T_EAST,
@@ -33,3 +33,4 @@ typedef struct {
 
 
 message read_msg();
+message testing_mode_read_message();
