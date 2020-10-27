@@ -13,9 +13,6 @@ int fast_speed;
 // init
 Motor my_motor(MOTOR_PIN);
 
-/*
- * Deprecated
- */
 void motor_init() {
   slow_speed = 10;
   fast_speed = 255;
@@ -72,7 +69,7 @@ bool motor_fast(SM_motor *sm){
 bool motor_slow(SM_motor *sm){
   bool success = false;
   int start_dir = direction_to_int(sm->current_direction);
-  my_motor.Dir_Speed(start_dir, slow_speed);
+  my_motor.Dir_Speed(start_dir, fast_speed);
   success = my_motor.Start();
   return success;
 }
@@ -85,6 +82,7 @@ bool motor_slow(SM_motor *sm){
  * @return int: -1 or +1
  */
 int direction_to_int(motor_direction m_dir) {
+  // TODO test and specificy correlation between -1/+1 annd EAST/WEST
   switch (m_dir) {
     case M_EAST:
       return 1;
