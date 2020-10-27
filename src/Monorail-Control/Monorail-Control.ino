@@ -1,7 +1,7 @@
 #include "Brakes.h"
-#include "COMMS.h"
-#include "CS.h"
-#include "Door.h"
+#include "Comms.h"
+#include "Colour_sensor.h"
+#include "MetroDoor_Adaptor.h"
 #include "Motor_Adaptor.h"
 
 
