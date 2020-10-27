@@ -6,16 +6,8 @@
 #define COLOURS2 A4
 #define COLOURS3 A3
 
-// diode colour detection ranges
-
-sensor_range rgb_red =    {6, 29,   6, 18,    0, 0};
-sensor_range rgb_green =  {0, 0,    9, 56,    17, 58};
-sensor_range rgb_blue =   {35, 95,  35, 35,   22, 75};
-sensor_range rgb_yellow = {4, 11,   6, 12,    12, 20};
-
 // Globals
 int frequency = 0;
-
 
 void colour_sensor_init() {
   pinMode(COLOUROUT, INPUT);
@@ -51,16 +43,16 @@ sensor_colour readColour() {
 
 
   //still need to play around with values
-  if (R<19 & R>6 & G<18 & G>6) {
+  if(R>5 & R<20 & G>21 & G< 65 & B>20 & B<50) {
     return CS_RED;
   }
-  if (G<56 & G>9 & B<58 & B>17) {
+  else if(R>20 & R<33 & G>11 & G<24 & B>28 & B<45){
     return CS_GREEN;
   }
-  if (R<95 & R>35 & G == 35 & B<75 & B>22) {
+  else if(R>7 & R<40 & G>11 & G<20 & B>7 & B<14){
     return CS_BLUE;
   }
-  if (R<11 & R>4 & G<12 & G>6 & B<20 & B>12) {
+  else if(R>2 & R<8 & G>5 & G<10 & B>9 & B<16){
     return CS_YELLOW;
   }
 
