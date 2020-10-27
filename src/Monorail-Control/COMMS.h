@@ -11,6 +11,8 @@ typedef enum {
   O_EMERGENCY,
 } operator_instructions;
 
+// Deprecated
+// No long in use
 typedef enum{
   T_NONE,
   T_EAST,

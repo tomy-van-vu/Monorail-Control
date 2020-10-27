@@ -2,16 +2,14 @@
 #include "COMMS.h"
 #include "CS.h"
 #include "Door.h"
-#include "MC.h"
+#include "Motor_Adaptor.h"
 
 
 #include "BTInterface.h"
-// temporary change of serial port for testing on Uno (no second hardware serial port)
-//bt_interface bt_i = {4, "INIT", &Serial2};
-bt_interface bt_i = {4, "INIT", &Serial};
+bt_interface bt_i = {4, "INIT", &Serial2};
 #include "Helpers.h"
 
-#define BUFFER_SIZE 20
+
 #define BAUD_RATE 9600
 
 
