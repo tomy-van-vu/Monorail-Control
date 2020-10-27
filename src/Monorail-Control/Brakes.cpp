@@ -1,6 +1,6 @@
 #include "Brakes.h"
 
 
-bool engage_brakes() {
+bool brakes_on() {
   return true;
 }
