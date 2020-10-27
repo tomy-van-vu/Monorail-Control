@@ -1,6 +1,6 @@
 /********************************************************************************/
 // NOTE: Motor_Adapter.cpp has all functions returning true for testing purposes
-// revert changes
+// to revert, comment out #define NO_HARDWARE
 /********************************************************************************/
 
 #include "Brakes.h"
@@ -387,12 +387,12 @@ bool ready_next_state() {
       case M_FAST:
         train_state.motor.next_state = M_START;
         train_state.motor.next_speed = M_SLOW;
-        //train_state.motor.target_speed = M_IDLE;
+//        train_state.motor.target_speed = M_IDLE;
         break;
       case M_SLOW:
         train_state.motor.next_state = M_STOP;
         train_state.motor.next_speed = M_IDLE;
-        //train_state.motor.target_speed = M_IDLE;
+//        train_state.motor.target_speed = M_IDLE;
         break;
       case M_IDLE:  
         // train has stopped, direction can be changed on next transition

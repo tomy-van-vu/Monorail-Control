@@ -7,6 +7,9 @@
 
 #define MOTOR_PIN 9
 
+
+#define NO_HARDWARE // comment out
+
 int slow_speed;
 int fast_speed;
 
@@ -21,7 +24,9 @@ void motor_init() {
 
 bool motor_e_stop(SM_motor *sm) {
   ///// for testing without hardware
+  #ifdef NO_HARDWARE
   return true;
+  #endif
   
   bool success = false;
   success = my_motor.Stop();
