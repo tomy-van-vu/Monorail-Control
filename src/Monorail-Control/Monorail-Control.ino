@@ -1,46 +1,47 @@
+/********************************************************************************/
+// NOTE: Motor_Adapter.cpp has all functions returning true for testing purposes
+// revert changes
+/********************************************************************************/
+
 #include "Brakes.h"
 #include "Comms.h"
 #include "Colour_sensor.h"
 #include "MetroDoor_Adaptor.h"
 #include "Motor_Adaptor.h"
 
+#define BAUD_RATE 9600
+#define BLE_PIN 4
 
 #include "BTInterface.h"
-bt_interface bt_i = {4, "INIT", &Serial2};
+bt_interface bt_i = {BLE_PIN, "INIT", &Serial2};
 #include "Helpers.h"
-
-
-#define BAUD_RATE 9600
 
 
 typedef struct {
   SM_colour_sensor colour_sensor;
   SM_motor motor;
-  SM_door train_door;
+  SM_door door;
   SM_instructions instruction;
-  message last_tx;
 } SM_train;
 
 
 // SM declarations
 SM_colour_sensor colour_sensor = {CS_NONE, CS_NONE, false};
 SM_motor motor = {M_STOP, M_STOP, M_IDLE, M_IDLE, M_IDLE, M_EAST, M_EAST, 0};
-SM_door train_door = {DOOR_CLOSE, DOOR_CLOSE};
+SM_door door = {DOOR_CLOSE, DOOR_CLOSE};
 SM_instructions instructions = {O_NONE, O_NONE, false};
-message tx = {NONE};
-SM_train train_state = {colour_sensor, motor, train_door, instructions, tx};
+SM_train train_state = {colour_sensor, motor, door, instructions};
 
 
-// test /////////////////////////////////////////////////////////////////// test
+unsigned long emergency_last_tx = millis();
+int emergency_ping_timer = 1000;
+
+
+// Testing stuffs
 bool debug_mode = true;
 unsigned long print_timer = millis();
 int print_period = 4000;
 int p_counter = 0;
-
-
-
-
-
 
 /********************************************************************************/
 /********************************************************************************/
@@ -49,11 +50,12 @@ int p_counter = 0;
 /********************************************************************************/
 void setup() {
   Serial.begin(BAUD_RATE);
-  //Serial2.begin(BAUD_RATE);
-  pinMode(4, INPUT);
-
-  door_init();
+  Serial2.begin(BAUD_RATE);
+  
+  pinMode(BLE_PIN, INPUT);
   colour_sensor_init();
+  door_init();
+  motor_init();
 }
 
 
@@ -65,33 +67,31 @@ void setup() {
 
 void loop() {
   // check BLE
-  message bt_inc = read_msg();
+  //message bt_inc = read_msg();
+  message bt_inc = testing_mode_read_message();
   if (bt_inc) {
     update_operator_instruction(bt_inc);
   }
   
   // colour sensor
-  // commented out - function takes ~2100ms when no colours are detected
-  //bool colour_change = check_colour_sensor(&colour_sensor);
-  //if (colour_change) {
-  if(train_state.colour_sensor.colour_updated) {
-    //update_next_state_CS();
-  }
+  // commented out - function stalls/takes ~2100ms when no colours are detected
+  //check_colour_sensor(&colour_sensor);
 
   // update state machine
   ready_next_state();
   do_state_transition();
+
+  // TODO: split transmite update to control-box into separate function
+  // currently scattered throughout do_state_transition
 
 
   // DEBUG
   if (debug_mode) {
     if (millis() - print_timer >= print_period) {
       print_timer = millis();
-
-
+      
       print_counter();
-
-      print_instruction();
+      print_instruction(); 
       print_colour();
       print_motor();
       print_speed();
@@ -108,51 +108,85 @@ void loop() {
 
 /********************************************************************************/
 /********************************************************************************/
-/*************    STATE UPDATERS - CONTROL BOX INSTRUCTION    *******************/
+/*******************    STORE OPERATOR'S INSTRUCTION    *************************/
 /********************************************************************************/
 /********************************************************************************/
+
 
 void update_operator_instruction(message new_instruction) {
+
   switch (new_instruction) {
-
-    // cases 48-55, temporary value for inputs via serial to emulate incoming BLE comms
-    // for testing without BLE
-
     case NONE:
-    case 48:  // key:0 meaning:NONE
+      train_state.instruction.current_instruction = O_NONE;
       break;
     case EAST:
-    case 49:  // key:1 meaning:EAST
       train_state.instruction.current_instruction = O_EAST;
       break;
     case WEST:
-    case 50:  // key:2 meaning:WEST
       train_state.instruction.current_instruction = O_WEST;
       break;
     case START:
-    case 51:  // key:3 meaning:START
       train_state.instruction.current_instruction = O_START;
       break;
     case STOP:
-    case 52:  // key:4 meaning:STOP
       train_state.instruction.current_instruction = O_STOP;
       break;
     case OPEN:
-    case 53:  // key:5 meaning:OPEN
       train_state.instruction.current_instruction = O_OPEN;
       break;
     case CLOSE:
-    case 54:  // key:6 meaning:CLOSE
       train_state.instruction.current_instruction = O_CLOSE;
       break;
     case EMERGENCY:
+      train_state.instruction.current_instruction = O_EMERGENCY;
+      do_emergency();
+      break;
+    default:
+      /*
+       * commented out for testing
+       * test codes are triggering default state
+      if (debug_mode) {
+        Serial.println("ERROR - update_operator_instruction() - reading instruction");
+        Serial.println("Received message:  ");
+        Serial.println(new_instruction);
+      }
+      */
+      break;
+
+  }
+  
+  //////
+  // values for inputs via serial monitor to emulate data inputs from sensors 
+  // and peripherals for testing without hardware
+  if (debug_mode) {
+  switch (new_instruction) {
+    case 48:  // key:0 meaning:NONE
+      train_state.instruction.current_instruction = O_NONE;
+      break;
+    case 49:  // key:1 meaning:EAST
+      train_state.instruction.current_instruction = O_EAST;
+      break;
+    case 50:  // key:2 meaning:WEST
+      train_state.instruction.current_instruction = O_WEST;
+      break;
+    case 51:  // key:3 meaning:START
+      train_state.instruction.current_instruction = O_START;
+      break;
+    case 52:  // key:4 meaning:STOP
+      train_state.instruction.current_instruction = O_STOP;
+      break;
+    case 53:  // key:5 meaning:OPEN
+      train_state.instruction.current_instruction = O_OPEN;
+      break;
+    case 54:  // key:6 meaning:CLOSE
+      train_state.instruction.current_instruction = O_CLOSE;
+      break;
     case 55:  // key:7 meaning:EMERGENCY
       train_state.instruction.current_instruction = O_EMERGENCY;
       do_emergency();
       break;
 
 
-    // cases 98-101, temporary value for inputs via serial to emulate colour detection
     case 97:  // key:a meaning:CS_NONE
       train_state.colour_sensor.last_colour = train_state.colour_sensor.current_colour;
       train_state.colour_sensor.current_colour = CS_NONE;
@@ -186,39 +220,43 @@ void update_operator_instruction(message new_instruction) {
       }
       break;
   }
+  }
 
 }
 
 
 /********************************************************************************/
 /********************************************************************************/
-/**********************    VALIDATE NEXT TRANSITION    **************************/
+/****************    VALIDATE AND SETUP NEXT TRANSITION    **********************/
 /********************************************************************************/
 /********************************************************************************/
 
 bool ready_next_state() {  
+
+  /////
+  // Start moving
+  // Band-aid solution to state transition that was overlooked
   if (train_state.instruction.current_instruction == O_START){
-    if (train_state.train_door.current_state == DOOR_CLOSE) {
+    if (train_state.door.current_state == DOOR_CLOSE) {
       train_state.motor.next_state = M_START;
       train_state.motor.next_speed = M_SLOW;
       train_state.motor.target_speed = M_SLOW;
     }    
   }
-  
-  // If colour sensor detects a change
+
+  /////
+  // If colour sensor detects a change in colour
   if (train_state.colour_sensor.colour_updated == true) {
     switch (train_state.colour_sensor.current_colour) {
       case CS_NONE:
         // no colour, no state change
         break;
       case CS_RED:
-      //////////_1
+      //////////
       // Train is at the station
-      // Check if the operator has sent STOP message 
-      // or EAST/WEST requiring a change in direction
+      // Check if the operator has sent STOP or 
+      // EAST/WEST message that requires a change in direction
       
-        // ensure action/change only happens once, until new patch of red
-        //if (train_state.colour_sensor.colour_updated == false) {break;}
         train_state.colour_sensor.colour_updated = false;
         
         switch(train_state.instruction.current_instruction) {
@@ -226,27 +264,23 @@ bool ready_next_state() {
             train_state.motor.next_state = M_STOP;
             train_state.motor.next_speed = M_IDLE;
             train_state.motor.target_speed = M_IDLE;
-  
             train_state.instruction.current_instruction = O_NONE;
 
           case O_EAST:
             if (train_state.motor.current_direction != M_EAST) {
               train_state.motor.next_direction = M_EAST;
-              
               train_state.motor.next_state = M_STOP;
               train_state.motor.next_speed = M_IDLE;
               train_state.motor.target_speed = M_SLOW;  // makes train auto start after changing direction
-              
             }
             break;
+            
           case O_WEST:
             if (train_state.motor.current_direction != M_WEST) {
               train_state.motor.next_direction = M_WEST;
-
               train_state.motor.next_state = M_STOP;
               train_state.motor.next_speed = M_IDLE;
               train_state.motor.target_speed = M_SLOW;  // makes train auto start after changing direction
-              
             }
             break;
           default:
@@ -254,9 +288,9 @@ bool ready_next_state() {
         }
         break;
       case CS_GREEN:
-      //////////_1
+      //////////
       // Change speed
-        // ensure speed change only happens once, until new patch of green
+        // ensure speed change only happens once on the same patch of green
         if (train_state.colour_sensor.colour_updated == false) {break;}
         train_state.colour_sensor.colour_updated = false;
         
@@ -274,16 +308,13 @@ bool ready_next_state() {
         }
         break;
       case CS_BLUE:
-      //////////_1
-      
-        // ensure speed change only happens once
+      //////////
         if (train_state.colour_sensor.colour_updated == false) {break;}
         train_state.colour_sensor.colour_updated = false;
-        
         do_emergency();    
         break;
       case CS_YELLOW:
-      //////////_1
+      //////////
       // Change direction
         // ensure change only happens once, until new patch of yellow
         if (train_state.colour_sensor.colour_updated == false) {break;}
@@ -292,12 +323,10 @@ bool ready_next_state() {
         switch(train_state.motor.current_direction) {
           case M_EAST:
             train_state.motor.next_direction = M_WEST;
-            // motor.next_speed is handled below
             train_state.motor.target_speed = train_state.motor.current_speed;
             break;
           case M_WEST:
             train_state.motor.next_direction = M_EAST;
-            // motor.next_speed is handled below
             train_state.motor.target_speed = train_state.motor.current_speed;
             break;
           default:
@@ -305,17 +334,19 @@ bool ready_next_state() {
         }
         break;
       default: 
-      //////////_1
+      //////////
+        Serial.println("ERROR - ready_next_state() - read non valid colour state");
         break;
     }
   }
 
-  
-  // When train is idle at a station, with operator instruction
-  if(train_state.motor.current_state == M_STOP && train_state.colour_sensor.last_colour == CS_RED) {
+  /////
+  // When train is idle at a station
+  if(train_state.motor.current_state == M_STOP 
+  && (train_state.colour_sensor.last_colour == CS_RED || train_state.colour_sensor.current_colour == CS_RED)) { // Accomodate for possible positioning of colour sensor on the train
     switch (train_state.instruction.current_instruction) {
-      case O_START:
-        if (train_state.train_door.current_state == DOOR_CLOSE) {
+      case O_START: // Door must be closed for train to start moving
+        if (train_state.door.current_state == DOOR_CLOSE) {
           train_state.motor.next_state = M_START;
           train_state.motor.next_speed = M_SLOW;
           train_state.motor.target_speed = M_SLOW;
@@ -323,23 +354,21 @@ bool ready_next_state() {
         break;
       case O_EAST:
         train_state.motor.next_direction = M_EAST;
-
-        train_state.motor.next_state = M_START;
-        train_state.motor.next_speed = M_SLOW;
+//        train_state.motor.next_state = M_START;
+//        train_state.motor.next_speed = M_SLOW;
         train_state.instruction.current_instruction = O_NONE;
         break;
       case O_WEST:
         train_state.motor.next_direction = M_WEST;
-
-        train_state.motor.next_state = M_START;
-        train_state.motor.next_speed = M_SLOW;
+//        train_state.motor.next_state = M_START;
+//        train_state.motor.next_speed = M_SLOW;
         train_state.instruction.current_instruction = O_NONE;
         break;
       case O_OPEN:
-        train_state.train_door.next_state = DOOR_OPEN;
+        train_state.door.next_state = DOOR_OPEN;
         break;
       case O_CLOSE:
-        train_state.train_door.next_state = DOOR_CLOSE;
+        train_state.door.next_state = DOOR_CLOSE;
         break;
       default:
         break;
@@ -348,10 +377,9 @@ bool ready_next_state() {
 
 
   
-
-  // Check if train is in process of changing direction
-  // For YELLOW sensor where FAST EAST/WEST to FAST in the opposite direction
-  // requiring multiple state transitions
+  /////
+  // Train should be going in the opposite direction
+  // Slow down, then stop 
   
   if (train_state.motor.current_direction != train_state.motor.next_direction) {
     ///// train is in the wrong direction, needs to slow down
@@ -359,10 +387,12 @@ bool ready_next_state() {
       case M_FAST:
         train_state.motor.next_state = M_START;
         train_state.motor.next_speed = M_SLOW;
+        //train_state.motor.target_speed = M_IDLE;
         break;
       case M_SLOW:
         train_state.motor.next_state = M_STOP;
         train_state.motor.next_speed = M_IDLE;
+        //train_state.motor.target_speed = M_IDLE;
         break;
       case M_IDLE:  
         // train has stopped, direction can be changed on next transition
@@ -371,10 +401,14 @@ bool ready_next_state() {
         break;
     }
   } 
-  ///// Train is going in the correct direction, check that train is going at the correct speed
+
+
+  /////
+  // Speed correction
+  // Train is going in the correct direction
   if (train_state.motor.current_speed != train_state.motor.target_speed 
   && train_state.motor.current_direction == train_state.motor.next_direction) {
-    
+
     switch (train_state.motor.target_speed) {
       case M_FAST:
         switch (train_state.motor.current_speed) {
@@ -433,38 +467,36 @@ bool ready_next_state() {
 /********************************************************************************/
 
 bool do_state_transition() {
+  // States to send update to control box:
+    // Starting to move
+    // Stopping
+    // Changing direction
+    // Door opening
+    // Door closing
+  
   bool success = false;
   bool starting = false;  // band-aid solution to check if train is gonig from IDLE -> SLOW
 
   
-  ///// motor
-  // speed & state
+  ///// Motor states
+  // speed & stopped/moving transitions
   if (train_state.motor.current_speed != train_state.motor.next_speed) {
     switch (train_state.motor.next_speed) {
       case M_FAST:
         success = motor_fast(&train_state.motor);
         if (success) {
-          train_state.motor.current_speed = M_FAST;
-          train_state.motor.current_state = M_START;
+          train_state.motor.current_speed = train_state.motor.next_speed;
+          train_state.motor.current_state = train_state.motor.next_state;
         }
         break;
       case M_SLOW:
-        // band-aid solution to check if train is gonig from IDLE -> SLOW
+        // band-aid solution to check if train is going from IDLE -> SLOW
         if (train_state.motor.current_speed == M_IDLE) {starting = true;}
         
         success = motor_slow(&train_state.motor);
-        
         if (success) {
-          train_state.motor.current_speed = M_SLOW;
-          train_state.motor.current_state = M_START;
-
-          // start instruction
-          if (train_state.instruction.current_instruction == O_START) {
-            //train_state.instruction.current_instruction = O_NONE;
-            //send_go();
-          }
-
-          // starting
+          train_state.motor.current_speed = train_state.motor.next_speed;
+          train_state.motor.current_state = train_state.motor.next_state;
           if (starting) {      
             train_state.instruction.current_instruction = O_NONE;
             send_go();
@@ -475,8 +507,8 @@ bool do_state_transition() {
       case M_IDLE:
         success = motor_stop(&train_state.motor);
         if (success) {
-          train_state.motor.current_speed = M_IDLE;
-          train_state.motor.current_state = M_STOP;
+          train_state.motor.current_speed = train_state.motor.next_speed;
+          train_state.motor.current_state = train_state.motor.next_state;
           
           send_stop();
 
@@ -484,7 +516,7 @@ bool do_state_transition() {
           train_state.motor.current_direction = train_state.motor.next_direction;
 
           // direction has changed due to yellow, send update to control box
-          if (train_state.colour_sensor.last_colour == CS_YELLOW) {
+          if (train_state.colour_sensor.last_colour == CS_YELLOW || train_state.colour_sensor.current_colour == CS_YELLOW) {
             switch (train_state.motor.current_direction) {
               case M_EAST:
                 send_east();
@@ -515,15 +547,35 @@ bool do_state_transition() {
     }
   }
 
+
+  /////
+  // Band-aid solution to overlooked state transition
+  // Train is stopped, direction transition if needed
+  if (train_state.motor.current_state == M_STOP) {
+    if (train_state.motor.current_direction != train_state.motor.next_direction) {
+      
+      switch(train_state.motor.next_direction) {
+        case M_EAST:
+          send_east();
+          break;
+        case M_WEST:
+          send_west();
+          break;
+        default:
+          break;
+      }
+      train_state.motor.current_direction = train_state.motor.next_direction;
+    }
+  }
   
-  
-  ///// door
+  /////
+  // door
   success = false;
-  switch(train_state.train_door.next_state) {
+  switch(train_state.door.next_state) {
     case DOOR_OPEN:
-      success = open_door(&train_state.train_door);
+      success = open_door(&train_state.door);
       if (success) {
-        train_state.train_door.current_state = train_state.train_door.next_state;
+        train_state.door.current_state = train_state.door.next_state;
         if (train_state.instruction.current_instruction == O_CLOSE) {
           send_doors_open();
           train_state.instruction.current_instruction = O_NONE;
@@ -531,9 +583,9 @@ bool do_state_transition() {
       }
       break;
     case DOOR_CLOSE:
-      success = close_door(&train_state.train_door);
+      success = close_door(&train_state.door);
       if (success) {
-        train_state.train_door.current_state = train_state.train_door.next_state;
+        train_state.door.current_state = train_state.door.next_state;
         if (train_state.instruction.current_instruction == O_CLOSE) {
           send_doors_closed();
           train_state.instruction.current_instruction = O_NONE;
@@ -558,8 +610,23 @@ void train_init() {
 
 
 void do_emergency() {
-}
+  // TODO: engage e-brakes instead of using motor to stop
+  
+  // force stop via aggressive motor control
+  bool success = false;
+  while (!success) {
+    success = motor_e_stop(&train_state.motor);
+  }
 
+  // Transmit emergency signal to control box periodically
+  emergency_last_tx = millis();
+  while (true) {
+    if (millis() - emergency_last_tx >= emergency_ping_timer) {
+      send_emergency();
+      emergency_last_tx = millis();
+    }
+  }
+}
 
 
 
@@ -635,7 +702,7 @@ void print_colour() {
 
 void print_door() {
   Serial.print("DOOR_______:  ");
-  switch (train_state.train_door.current_state) {
+  switch (train_state.door.current_state) {
     case DOOR_OPEN:
       Serial.println("OPEN");
       break;
