@@ -1,13 +1,35 @@
+#include <Arduino.h>
+#include <Encoder.h>
+#include <PID_v1.h>
+#include <Servo.h>
+
+
 #include "Motor.h"
 
-Motor ::Motor(unsigned int pin)
+//Encoder myEnc(22, 23);
+double Setpoint, Input, Output;
+double consKp = 0.1, consKi = 0.0001, consKd = 0.2;
+
+unsigned long preStop; // millies timer
+unsigned long pSlow;   // millies timer
+unsigned int motorOut; // holds the value to be writen to the motor.
+unsigned int speed;        // holds the set speed
+unsigned int speed_hold; 
+int dir;               // hold the dirrection of the train
+long oldPosition;      // holds the encorder data
+long distance;         // The distance need to be traveled by PID.
+
+Servo my_motor;
+
+
+void Motor_init(unsigned int pin)
 {
-  motor.attach(pin);
+  my_motor.attach(pin);
   preStop = 0;
   motorOut = 1500;
 }
 
-void Motor::motorwrite()
+void motorwrite()
 {
 
   if (motorOut >= 2000)
@@ -18,10 +40,10 @@ void Motor::motorwrite()
   {
     motorOut = 1000;
   }
-  motor.write(motorOut);
+  my_motor.write(motorOut);
 }
 
-bool Motor ::Stop()
+bool stop()
 {
   if (motorOut != 1500)
   {
@@ -44,7 +66,7 @@ bool Motor ::Stop()
   return true;
 }
 
-bool Motor::Start()
+bool motor_start()
 {
   if (motorOut != speed)
   {
@@ -83,7 +105,7 @@ bool Motor::Start()
   return true;
 }
 
-void Motor::Dir_Speed(int dir_val, unsigned int speed_val)
+void Dir_Speed(int dir_val, unsigned int speed_val)
 {
   if (dir_val == dir && speed_val == speed_hold)  // if the value already exist return
   {
@@ -101,6 +123,45 @@ void Motor::Dir_Speed(int dir_val, unsigned int speed_val)
     dir = 1;
     speed = map(speed_hold, 0, 255, 1500, 2000);
   }
+}
+
+
+bool motor_fast(SM_motor *sm) {
+  motor_direction d = sm->current_direction;
+  int d2 = get_direction(d);
+
+  Dir_Speed(d2, 255);
+  bool s = motor_start();
+  return s;
+}
+
+
+bool motor_stop(SM_motor *sm) {
+  motor_direction d = sm->current_direction;
+  int d2 = get_direction(d);
+
+  Dir_Speed(d2, 0);
+  bool s = motor_start();
+  return s;
+}
+
+bool motor_slow(SM_motor *sm) {
+  motor_direction d = sm->current_direction;
+  int d2 = get_direction(d);
+
+  Dir_Speed(d2, 30);
+  bool s = motor_start();
+  return s;
+}
+
+int get_direction(motor_direction md) {
+  if (md == M_EAST) {
+    return -1;
+  } else {
+    return 1;
+  }
+  
+  return 0;
 }
 /*
 void Motor::SetDistance(long var)

@@ -1,32 +1,45 @@
-#include <Arduino.h>
-#include <Encoder.h>
-#include <PID_v1.h>
-#include <Servo.h>
+typedef enum {
+  M_STOP, 
+  M_START, 
+} motor_state;
 
-class Motor
-{
-    Servo motor;
-    //Encoder myEnc(22, 23);
-    double Setpoint, Input, Output;
-    double consKp = 0.1, consKi = 0.0001, consKd = 0.2;
+typedef enum {
+  M_IDLE, // stationary
+  M_SLOW, // pre-determined speed
+  M_FAST, // pre-determined speed
+} motor_speed;
 
-    //PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
+typedef enum { 
+  M_NONE,
+  M_EAST, 
+  M_WEST,
+} motor_direction;
 
-public:
-    Motor(unsigned int); // constructor
-    bool Stop();  // returns true when the train has stopped.
-    bool Start(); // returns true when the train has reached set speed.
-    void Dir_Speed(int, unsigned int); // set the dirrection(1 or -1) and speed(0-255)
-    void SetDistance(long);
+typedef struct {
+  motor_state current_state;
+  motor_state next_state;
+  motor_speed current_speed;
+  motor_speed next_speed;
+  motor_speed target_speed;
+  motor_direction current_direction;
+  motor_direction next_direction;
+  int pwm;
+} SM_motor;
 
-private:
-    void motorwrite();     // function to write to the motor.
-    unsigned long preStop; // millies timer
-    unsigned long pSlow;   // millies timer
-    unsigned int motorOut; // holds the value to be writen to the motor.
-    unsigned int speed;        // holds the set speed
-    unsigned int speed_hold; 
-    int dir;               // hold the dirrection of the train
-    long oldPosition;      // holds the encorder data
-    long distance;         // The distance need to be traveled by PID.
-};
+
+
+//PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
+
+void Motor_init(unsigned int); // constructor
+bool stop();  // returns true when the train has stopped.
+bool motor_start(); // returns true when the train has reached set speed.
+void Dir_Speed(int, unsigned int); // set the dirrection(1 or -1) and speed(0-255)
+void SetDistance(long);
+
+bool motor_fast(SM_motor *);
+bool motor_slow(SM_motor *);
+bool motor_stop(SM_motor *);
+
+void motorwrite();     // function to write to the motor.
+
+int get_direction(motor_direction);

@@ -1,15 +1,28 @@
 #include "MetroDoor.h"
 
-MetroDoor ::MetroDoor(int pin)
+#include <Metro.h>
+#include <Servo.h>
+#include <Arduino.h>
+
+
+Servo my_door;
+
+    bool closed;
+    bool opened;
+    int state;
+    int hook;
+    unsigned long previousMillis;
+
+void MetroDoor_init(int pin)
 {
-    door.attach(pin);
+    my_door.attach(pin);
     closed = false;
     opened = false;
     state = 0;
     hook = 0;
 }
 
-bool MetroDoor::open()
+bool open_door()
 {
     if (opened == true)
     {
@@ -19,7 +32,7 @@ bool MetroDoor::open()
     return false;
 }
 
-bool MetroDoor::close()
+bool close_door()
 {
     if (closed == true)
     {
@@ -29,7 +42,7 @@ bool MetroDoor::close()
     return false;
 }
 
-void MetroDoor::compute(int val) // 1 = open; -1 = close;
+void compute(int val) // 1 = open; -1 = close;
 {
     unsigned long currentMillis = millis();
 
@@ -39,20 +52,20 @@ void MetroDoor::compute(int val) // 1 = open; -1 = close;
         previousMillis = currentMillis;
         state = 1;
         hook = val;
-        door.writeMicroseconds(1600);
+        my_door.writeMicroseconds(1600);
     }
     else if (val == -1 && state == 0)
     {
         previousMillis = currentMillis;
         state = 1;
         hook = val;
-        door.writeMicroseconds(1400);
+        my_door.writeMicroseconds(1400);
     }
 
     if (currentMillis - previousMillis >= 5000)
     {
         state = 0;
-        door.writeMicroseconds(1500);
+        my_door.writeMicroseconds(1500);
         if (hook == 1)
         {
             opened = true;

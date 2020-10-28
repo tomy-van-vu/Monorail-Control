@@ -14,11 +14,12 @@
 
 /********************************************************************************/
 
-#include "Brakes.h"
+//#include "Brakes.h"
 #include "Comms.h"
 #include "Colour_sensor.h"
-#include "MetroDoor_Adaptor.h"
-#include "Motor_Adaptor.h"
+#include "MetroDoor.h"
+#include "Motor.h"
+
 
 #define BAUD_RATE 9600
 #define BLE_PIN 4
@@ -58,6 +59,9 @@ unsigned long print_timer = millis();
 int print_period = 4000;
 int p_counter = 0;
 
+#define MOTOR_PIN 9
+#define DOOR_PIN 7
+
 /********************************************************************************/
 /********************************************************************************/
 /********************************    SETUP    ***********************************/
@@ -69,8 +73,12 @@ void setup() {
   
   pinMode(BLE_PIN, INPUT);
   colour_sensor_init();
-  door_init();
-  motor_init();
+  Motor_init(MOTOR_PIN);
+  MetroDoor_init(DOOR_PIN);
+
+  
+  //door_init();
+  //motor_init();
 }
 
 
@@ -589,7 +597,7 @@ bool do_state_transition() {
   success = false;
   switch(train_state.door.next_state) {
     case DOOR_OPEN:
-      success = open_door(&train_state.door);
+      success = open_door();
       if (success) {
         train_state.door.current_state = train_state.door.next_state;
         if (train_state.instruction.current_instruction == O_CLOSE) {
@@ -599,7 +607,7 @@ bool do_state_transition() {
       }
       break;
     case DOOR_CLOSE:
-      success = close_door(&train_state.door);
+      success = close_door();
       if (success) {
         train_state.door.current_state = train_state.door.next_state;
         if (train_state.instruction.current_instruction == O_CLOSE) {
@@ -631,7 +639,7 @@ void do_emergency() {
   // force stop via aggressive motor control
   bool success = false;
   while (!success) {
-    success = motor_e_stop(&train_state.motor);
+    success = motor_stop(&train_state.motor);
   }
 
   // Transmit emergency signal to control box periodically

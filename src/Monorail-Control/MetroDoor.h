@@ -1,24 +1,16 @@
+typedef enum {
+  DOOR_CLOSE,
+  DOOR_OPEN
+} door_position;
 
-#include <Metro.h>
-#include <Servo.h>
-#include <Arduino.h>
+typedef struct {
+  door_position current_state;
+  door_position next_state;
+} SM_door;
 
-class MetroDoor
 
-{
-    Servo door;
 
-public:
-    MetroDoor(int);
-    bool open();
-    bool close();
+    void MetroDoor_init(int);
+    bool open_door();
+    bool close_door();
     void compute(int);
-
-private:
-    bool closed;
-    bool opened;
-    int state;
-    int hook;
-    unsigned long previousMillis;
-   
-};
