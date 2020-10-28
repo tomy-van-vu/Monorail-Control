@@ -7,8 +7,7 @@
 
 #define MOTOR_PIN 9
 
-
-#define NO_HARDWARE // comment out
+#define NO_MOTOR // comment out when motor is connected
 
 int slow_speed;
 int fast_speed;
@@ -24,7 +23,7 @@ void motor_init() {
 
 bool motor_e_stop(SM_motor *sm) {
   ///// for testing without hardware
-  #ifdef NO_HARDWARE
+  #ifdef NO_MOTOR
   return true;
   #endif
   
@@ -40,7 +39,9 @@ bool motor_e_stop(SM_motor *sm) {
  */
 bool motor_stop(SM_motor *sm) {
   ///// for testing without hardware
+  #ifdef NO_MOTOR
   return true;
+  #endif
   
   bool success = false;
   success = my_motor.Stop();
@@ -56,7 +57,9 @@ bool motor_stop(SM_motor *sm) {
  */
 bool motor_start(SM_motor *sm){
   ///// for testing without hardware
+  #ifdef NO_MOTOR
   return true;
+  #endif
   
   bool success = false;
   int start_dir = direction_to_int(sm->current_direction);
@@ -74,7 +77,9 @@ bool motor_start(SM_motor *sm){
  */
 bool motor_fast(SM_motor *sm){
   ///// for testing without hardware
+  #ifdef NO_MOTOR
   return true;
+  #endif
   
   bool success = false;
   int start_dir = direction_to_int(sm->current_direction);
@@ -92,7 +97,9 @@ bool motor_fast(SM_motor *sm){
  */
 bool motor_slow(SM_motor *sm){
   ///// for testing without hardware
+  #ifdef NO_MOTOR
   return true;
+  #endif
   
   bool success = false;
   int start_dir = direction_to_int(sm->current_direction);
