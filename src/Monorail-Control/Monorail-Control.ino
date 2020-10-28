@@ -1,6 +1,15 @@
 /********************************************************************************/
-// NOTE: Motor_Adapter.cpp has all functions returning true for testing purposes
-// to revert, comment out #define NO_HARDWARE
+// NOTE: some code is modified to run without any hardware connected to the board
+
+// Motor_Adapter.cpp has all functions returning true for testing purposes
+// To revert, comment out #define NO_MOTOR
+
+// MetroDoor_Adapter.cpp has all functions returning true for testing purposes
+// To revert, comment out #define NO_DOOR
+
+// Colour_sensor in Monorail-Control.ino, function readColour stalls/takes ~2100ms 
+// to exit/return when not receiving any input data
+// To revert, comment out #define NO_COLOUR_SENSOR
 /********************************************************************************/
 
 #include "Brakes.h"
@@ -11,6 +20,8 @@
 
 #define BAUD_RATE 9600
 #define BLE_PIN 4
+
+#define NO_COLOUR_SENSOR  // comment out when running with sensor connected to the board
 
 #include "BTInterface.h"
 bt_interface bt_i = {BLE_PIN, "INIT", &Serial2};
@@ -37,6 +48,7 @@ unsigned long emergency_last_tx = millis();
 int emergency_ping_timer = 1000;
 
 
+/********************************************************************************/
 // Testing stuffs
 bool debug_mode = true;
 unsigned long print_timer = millis();
@@ -74,15 +86,17 @@ void loop() {
   }
   
   // colour sensor
-  // commented out - function stalls/takes ~2100ms when no colours are detected
-  //check_colour_sensor(&colour_sensor);
-
+  // function stalls/takes ~2100ms when not receiving any input data
+  #ifndef NO_COLOUR_SENSOR
+  check_colour_sensor(&colour_sensor);
+  #endif
+  
   // update state machine
   ready_next_state();
   do_state_transition();
 
-  // TODO: split transmite update to control-box into separate function
-  // currently scattered throughout do_state_transition
+  // TODO: split transmit update to control-box into separate function
+  // currently scattered throughout do_state_transition()
 
 
   // DEBUG
@@ -91,12 +105,12 @@ void loop() {
       print_timer = millis();
       
       print_counter();
-      print_instruction(); 
-      print_colour();
-      print_motor();
-      print_speed();
-      print_direction();
-      print_door();
+      print_instruction();  // current instruction from operator to be executed
+      print_colour();       // most recent colour from the sensor
+      print_motor();        // whether motor is stopped or moving
+      print_speed();        // fast, slow, stopped/idle
+      print_direction();    // east or west
+      print_door();         // open or closed
 
       Serial.println();
 
@@ -112,7 +126,9 @@ void loop() {
 /********************************************************************************/
 /********************************************************************************/
 
-
+/*
+ * 
+ */
 void update_operator_instruction(message new_instruction) {
 
   switch (new_instruction) {
@@ -142,22 +158,18 @@ void update_operator_instruction(message new_instruction) {
       do_emergency();
       break;
     default:
-      /*
-       * commented out for testing
-       * test codes are triggering default state
       if (debug_mode) {
-        Serial.println("ERROR - update_operator_instruction() - reading instruction");
-        Serial.println("Received message:  ");
+        Serial.println("update_operator_instruction() - Received non operator instruction");
+        Serial.print("Received message:  ");
         Serial.println(new_instruction);
       }
-      */
       break;
 
   }
   
   //////
-  // values for inputs via serial monitor to emulate data inputs from sensors 
-  // and peripherals for testing without hardware
+  // Single char values for inputs via serial monitor to emulate data inputs from sensors 
+  // and peripherals. For testing without hardware
   if (debug_mode) {
   switch (new_instruction) {
     case 48:  // key:0 meaning:NONE
@@ -215,7 +227,7 @@ void update_operator_instruction(message new_instruction) {
 
     default:
       if (debug_mode) {
-        Serial.println("ERROR - update_operator_instruction() - reading instruction");
+        Serial.println("ERROR - update_operator_instruction() - read invalid instruction");
         Serial.println(new_instruction);
       }
       break;
@@ -354,14 +366,10 @@ bool ready_next_state() {
         break;
       case O_EAST:
         train_state.motor.next_direction = M_EAST;
-//        train_state.motor.next_state = M_START;
-//        train_state.motor.next_speed = M_SLOW;
         train_state.instruction.current_instruction = O_NONE;
         break;
       case O_WEST:
         train_state.motor.next_direction = M_WEST;
-//        train_state.motor.next_state = M_START;
-//        train_state.motor.next_speed = M_SLOW;
         train_state.instruction.current_instruction = O_NONE;
         break;
       case O_OPEN:
@@ -467,6 +475,7 @@ bool ready_next_state() {
 /********************************************************************************/
 
 bool do_state_transition() {
+  // TODO: split tx into own function
   // States to send update to control box:
     // Starting to move
     // Stopping

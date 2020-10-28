@@ -9,8 +9,8 @@ typedef enum {
 
 typedef enum {
   M_IDLE, // stationary
-  M_SLOW,
-  M_FAST,
+  M_SLOW, // pre-determined speed
+  M_FAST, // pre-determined speed
 } motor_speed;
 
 typedef enum { 
