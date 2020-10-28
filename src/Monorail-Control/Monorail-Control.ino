@@ -10,6 +10,8 @@
 // Colour_sensor in Monorail-Control.ino, function readColour stalls/takes ~2100ms 
 // to exit/return when not receiving any input data
 // To revert, comment out #define NO_COLOUR_SENSOR
+
+
 /********************************************************************************/
 
 #include "Brakes.h"
@@ -21,7 +23,8 @@
 #define BAUD_RATE 9600
 #define BLE_PIN 4
 
-#define NO_COLOUR_SENSOR  // comment out when running with sensor connected to the board
+#define NO_COLOUR_SENSOR      // comment out when running with sensor connected to the board
+#define SERIAL_MONITOR_INPUT  // comment out when not using Serial monitor to input data to emulate sensor readings
 
 #include "BTInterface.h"
 bt_interface bt_i = {BLE_PIN, "INIT", &Serial2};
@@ -159,9 +162,11 @@ void update_operator_instruction(message new_instruction) {
       break;
     default:
       if (debug_mode) {
+        #ifndef SERIAL_MONITOR_INPUT
         Serial.println("update_operator_instruction() - Received non operator instruction");
         Serial.print("Received message:  ");
         Serial.println(new_instruction);
+        #endif
       }
       break;
 
@@ -170,6 +175,7 @@ void update_operator_instruction(message new_instruction) {
   //////
   // Single char values for inputs via serial monitor to emulate data inputs from sensors 
   // and peripherals. For testing without hardware
+  #ifdef SERIAL_MONITOR_INPUT
   if (debug_mode) {
   switch (new_instruction) {
     case 48:  // key:0 meaning:NONE
@@ -233,6 +239,7 @@ void update_operator_instruction(message new_instruction) {
       break;
   }
   }
+  #endif
 
 }
 
