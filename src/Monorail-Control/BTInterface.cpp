@@ -1,3 +1,9 @@
+/*
+ * Written by T4C2 - __author name here__
+ * 
+ * Bluetooth communication interface
+ */
+ 
 #include "BTInterface.h"
 
 comm_status initialise_interface(bt_interface *frame) {

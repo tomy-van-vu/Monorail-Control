@@ -1,3 +1,9 @@
+/*
+ * Written by T4C2 - __author name here__
+ * 
+ * Functions to send fixed messages to a control box via bluetooth link
+ */
+
 #pragma once
 // FUNCTIONS TO SEND STATE DATA
 void send_stop() { quick_transmit(&bt_i, STOP); Serial.println("-- Message sent -- STOP");}
