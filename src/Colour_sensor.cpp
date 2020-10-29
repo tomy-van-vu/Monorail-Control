@@ -2,17 +2,24 @@
 #include <Arduino.h>
 
 // Pins
-#define COLOUROUT A5
-#define COLOURS2 A4
-#define COLOURS3 A3
+//#define COLOUROUT A5
+//#define COLOURS2 A4
+//#define COLOURS3 A3
 
+uint8_t  COLOUROUT;
+uint8_t  COLOURS2;
+uint8_t  COLOURS3;
 // Globals
 int frequency = 0;
 
-void colour_sensor_init() {
-  pinMode(COLOUROUT, INPUT);
-  pinMode(COLOURS2, OUTPUT);
-  pinMode(COLOURS3, OUTPUT);
+void colour_sensor_init(int in1, int in2, int out1) {
+  pinMode(in1, INPUT);
+  pinMode(in2, OUTPUT);
+  pinMode(out1, OUTPUT);
+
+  COLOUROUT = out1;
+  COLOURS2 = in1;
+  COLOURS3 = in2;
 }
 
 

@@ -13,6 +13,6 @@ typedef struct {
 } SM_colour_sensor;
 
 
-void colour_sensor_init();
+void colour_sensor_init(int , int, int);
 bool check_colour_sensor(SM_colour_sensor *);
 int read_colour();
