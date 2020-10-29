@@ -5,10 +5,10 @@
 //#define COLOUROUT A5
 //#define COLOURS2 A4
 //#define COLOURS3 A3
-
 uint8_t  COLOUROUT;
 uint8_t  COLOURS2;
 uint8_t  COLOURS3;
+
 // Globals
 int frequency = 0;
 
@@ -25,40 +25,52 @@ void colour_sensor_init(int in1, int in2, int out1) {
 
 
 sensor_colour readColour() {
+  int R, G, B;  // Store rgb values from each photodiode filtered readings
+
+  
   // Setting red filtered photodiodes to be read
   digitalWrite(COLOURS2, LOW);
   digitalWrite(COLOURS3, LOW);
   // Reading the output frequency
-  frequency = pulseIn(COLOUROUT, LOW);
-  int R = frequency;
+  R = pulseIn(COLOUROUT, LOW);
 
 
   // Setting Green filtered photodiodes to be read
   digitalWrite(COLOURS2, HIGH);
   digitalWrite(COLOURS3, HIGH);
   // Reading the output frequency
-  frequency = pulseIn(COLOUROUT, LOW);
-  int G = frequency;
+  G = pulseIn(COLOUROUT, LOW);
 
 
   // Setting Blue filtered photodiodes to be read
   digitalWrite(COLOURS2, LOW);
   digitalWrite(COLOURS3, HIGH);
   // Reading the output frequency
-  frequency = pulseIn(COLOUROUT, LOW);
-  int B = frequency;
+  B = pulseIn(COLOUROUT, LOW);
+  
 
   //need to play around with values
-  if((R>5) & (R<20) & (G>21) & (G< 65) & (B>20) & (B<50)) {
+  if((R>5)  & (R<20) & 
+     (G>21) & (G<65) & 
+     (B>20) & (B<50)) {
     return CS_RED;
   }
-  else if((R>7) & (R<40) & (G>11) & (G<20) & (B>7) & (B<14)){
+  else 
+  if((R>7)  & (R<40) & 
+     (G>11) & (G<20) & 
+     (B>7)  & (B<14)){
     return CS_BLUE;
   }
-  else if((R>20) & (R<33) & (G>11) & (G<24) & (B>28) & (B<45)){
+  else 
+  if((R>20) & (R<33) & 
+     (G>11) & (G<24) & 
+     (B>28) & (B<45)){
     return CS_GREEN;
   }
-  else if((R>2) & (R<8) & (G>5) & (G<10) & (B>9) & (B<16)){
+  else 
+  if((R>2) & (R<8) & 
+     (G>5) & (G<10) & 
+     (B>9) & (B<16)){
     return CS_YELLOW;
   }
 

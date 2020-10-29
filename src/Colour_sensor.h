@@ -1,3 +1,5 @@
+#pragma once
+
 typedef enum {
   CS_NONE,
   CS_RED, 
