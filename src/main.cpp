@@ -265,6 +265,7 @@ void ready_next_state() {
   /////
   // Start moving
   // Band-aid solution to state transition that was overlooked
+  /*
   if (train_state.instruction.current_instruction == O_START){
     if (train_state.door.current_state == DOOR_CLOSE) {
       train_state.motor.next_state = M_START;
@@ -272,6 +273,8 @@ void ready_next_state() {
       train_state.motor.target_speed = M_SLOW;
     }    
   }
+  */
+
 
   /////
   // If colour sensor detects a change in colour
@@ -602,7 +605,7 @@ void do_state_transition() {
       success = open_door();
       if (success) {
         train_state.door.current_state = train_state.door.next_state;
-        if (train_state.instruction.current_instruction == O_CLOSE) {
+        if (train_state.instruction.current_instruction == O_OPEN) {
           send_doors_open();
           train_state.instruction.current_instruction = O_NONE;
         }
