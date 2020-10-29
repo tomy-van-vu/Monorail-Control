@@ -70,7 +70,11 @@ unsigned int print_period = 4000;
 int p_counter = 0;
 
 
-
+/********************************************************************************/
+/********************************************************************************/
+/********************************    SETUP    ***********************************/
+/********************************************************************************/
+/********************************************************************************/
 
 void setup() {
   Serial.begin(BAUD_RATE);
@@ -170,7 +174,7 @@ void update_operator_instruction(message new_instruction) {
       break;
     default:
       if (debug_mode) {
-        #ifndef SERIAL_MONITOR_INPUT
+        #ifndef SERIAL_MONITOR_INPUT  // stop test inputs from Serial Moniotr from triggering error message
         Serial.println("update_operator_instruction() - Received non operator instruction");
         Serial.print("Received message:  ");
         Serial.println(new_instruction);
@@ -184,7 +188,6 @@ void update_operator_instruction(message new_instruction) {
   // Single char values for inputs via serial monitor to emulate data inputs from sensors 
   // and peripherals. For testing without hardware
   #ifdef SERIAL_MONITOR_INPUT
-  if (debug_mode) {
   switch ((int)new_instruction) {
     case 48:  // key:0 meaning:NONE
       train_state.instruction.current_instruction = O_NONE;
@@ -245,7 +248,6 @@ void update_operator_instruction(message new_instruction) {
         Serial.println(new_instruction);
       }
       break;
-  }
   }
   #endif
 
@@ -368,9 +370,9 @@ void ready_next_state() {
   }
 
   /////
-  // When train is idle at a station
-  if(train_state.motor.current_state == M_STOP 
-  && (train_state.colour_sensor.last_colour == CS_RED || train_state.colour_sensor.current_colour == CS_RED)) { // Accomodate for possible positioning of colour sensor on the train
+  // When train is stopped
+  if(train_state.motor.current_state == M_STOP){
+//  && (train_state.colour_sensor.last_colour == CS_RED || train_state.colour_sensor.current_colour == CS_RED)) { // Accomodate for possible positioning of colour sensor on the train
     switch (train_state.instruction.current_instruction) {
       case O_START: // Door must be closed for train to start moving
         if (train_state.door.current_state == DOOR_CLOSE) {
