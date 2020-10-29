@@ -6,12 +6,11 @@
 
 
 Servo my_door;
-
-    bool closed;
-    bool opened;
-    int state;
-    int hook;
-    unsigned long previousMillis;
+bool closed;
+bool opened;
+int state;
+int hook;
+unsigned long previousMillis;
 
 void MetroDoor_init(int pin)
 {
