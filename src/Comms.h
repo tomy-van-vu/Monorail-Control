@@ -1,3 +1,4 @@
+#pragma once
 #include "BTInterface.h"
 
 typedef enum {

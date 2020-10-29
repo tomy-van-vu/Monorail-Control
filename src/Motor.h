@@ -1,3 +1,5 @@
+#pragma once
+
 typedef enum {
   M_STOP, 
   M_START, 
@@ -35,11 +37,13 @@ bool stop();  // returns true when the train has stopped.
 bool motor_start(); // returns true when the train has reached set speed.
 void Dir_Speed(int, unsigned int); // set the dirrection(1 or -1) and speed(0-255)
 void SetDistance(long);
+void motorwrite();     // function to write to the motor.
 
+// adaptor functions
 bool motor_fast(SM_motor *);
 bool motor_slow(SM_motor *);
 bool motor_stop(SM_motor *);
-
-void motorwrite();     // function to write to the motor.
-
 int get_direction(motor_direction);
+
+
+

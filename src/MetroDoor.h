@@ -1,3 +1,5 @@
+#pragma once
+
 typedef enum {
   DOOR_CLOSE,
   DOOR_OPEN
@@ -10,7 +12,7 @@ typedef struct {
 
 
 
-    void MetroDoor_init(int);
-    bool open_door();
-    bool close_door();
-    void compute(int);
+void MetroDoor_init(int);
+bool open_door();
+bool close_door();
+void compute(int);
