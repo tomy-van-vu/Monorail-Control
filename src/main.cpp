@@ -78,7 +78,7 @@ int p_counter = 0;
 
 void setup() {
   Serial.begin(BAUD_RATE);
-  Serial2.begin(BAUD_RATE);
+//  Serial2.begin(BAUD_RATE);
   // put your setup code here, to run once:
   pinMode(BLE_PIN, INPUT);
   colour_sensor_init(COLOUR_IN_1, COLOUR_IN_2, COLOUR_OUT_1);
