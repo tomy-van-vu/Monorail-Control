@@ -17,10 +17,10 @@ bt_interface bt_i = {4, "INIT", &Serial};
 #define BAUD_RATE     9600
 #define BLE_PIN       4
 #define MOTOR_PIN     9
-#define COLOUR_IN_1   A4
-#define COLOUR_IN_2   A3
+#define COLOUR_IN_S2  A4
+#define COLOUR_IN_S3  A3
 #define COLOUR_OUT_1  A5
-#define DOOR_PIN      7
+#define DOOR_PIN      10
 
 
 typedef struct {
@@ -61,7 +61,7 @@ void print_speed();
 /********************************************************************************/
 // Testing stuffs
 
-#define NO_COLOUR_SENSOR      // comment out when running with sensor connected to the board
+//#define NO_COLOUR_SENSOR      // comment out when running with sensor connected to the board
 #define SERIAL_MONITOR_INPUT  // comment out when not using Serial monitor to input data to emulate sensor readings 
 
 bool debug_mode = true;
@@ -81,7 +81,7 @@ void setup() {
 //  Serial2.begin(BAUD_RATE);
   // put your setup code here, to run once:
   pinMode(BLE_PIN, INPUT);
-  colour_sensor_init(COLOUR_IN_1, COLOUR_IN_2, COLOUR_OUT_1);
+  colour_sensor_init(COLOUR_IN_S2, COLOUR_IN_S3, COLOUR_OUT_1);
   Motor_init(MOTOR_PIN);
   MetroDoor_init(DOOR_PIN);
 }
@@ -115,7 +115,7 @@ void loop() {
 
 
   // DEBUG
-  if (debug_mode) {
+  if (!debug_mode) {
     if (millis() - print_timer >= print_period) {
       print_timer = millis();
       

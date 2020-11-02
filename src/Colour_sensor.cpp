@@ -5,21 +5,21 @@
 //#define COLOUROUT A5
 //#define COLOURS2 A4
 //#define COLOURS3 A3
-uint8_t  COLOUROUT;
-uint8_t  COLOURS2;
-uint8_t  COLOURS3;
+int  COLOUROUT;
+int  COLOURS2;
+int  COLOURS3;
 
 // Globals
 int frequency = 0;
 
-void colour_sensor_init(int in1, int in2, int out1) {
-  pinMode(in1, INPUT);
-  pinMode(in2, OUTPUT);
-  pinMode(out1, OUTPUT);
+void colour_sensor_init(int s2, int s3, int out1) {
+  pinMode(s2, OUTPUT);
+  pinMode(s3, OUTPUT);
+  pinMode(out1, INPUT);
 
   COLOUROUT = out1;
-  COLOURS2 = in1;
-  COLOURS3 = in2;
+  COLOURS2 = s2;
+  COLOURS3 = s3;
 }
 
 
@@ -48,32 +48,44 @@ sensor_colour readColour() {
   // Reading the output frequency
   B = pulseIn(COLOUROUT, LOW);
   
+  /*
+  Serial.print(R);
+  Serial.print("  ");
+  Serial.print(G);
+  Serial.print("  ");
+  Serial.println(B);
+  */
 
   //need to play around with values
   if((R>5)  & (R<20) & 
      (G>21) & (G<65) & 
      (B>20) & (B<50)) {
+    //Serial.println("Red");
     return CS_RED;
   }
   else 
   if((R>7)  & (R<40) & 
      (G>11) & (G<20) & 
      (B>7)  & (B<14)){
+    //Serial.println("Blue");
     return CS_BLUE;
   }
   else 
   if((R>20) & (R<33) & 
      (G>11) & (G<24) & 
      (B>28) & (B<45)){
+    //Serial.println("Green");
     return CS_GREEN;
   }
   else 
   if((R>2) & (R<8) & 
      (G>5) & (G<10) & 
      (B>9) & (B<16)){
+    //Serial.println("Yellow");
     return CS_YELLOW;
   }
 
+  //Serial.println("None");
   return CS_NONE;
 
 }
