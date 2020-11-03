@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-//#include "Brakes.h"
+#include "Brakes.h"
 #include "Comms.h"
 #include "Colour_sensor.h"
 #include "MetroDoor.h"
@@ -19,6 +19,9 @@ bt_interface bt_i = {4, "INIT", &Serial3};
 #define COLOUR_IN_S3  A3
 #define COLOUR_OUT_1  A5
 #define DOOR_PIN      10
+#define SOLENOID_PIN  5
+
+#define EMERGENCY_PING_TIMER 1000 // ms, interval to transmite emergency signal to the control box
 
 
 typedef struct {
@@ -34,9 +37,6 @@ SM_motor motor = {M_STOP, M_STOP, M_IDLE, M_IDLE, M_IDLE, M_WEST, M_WEST, 0};
 SM_door door = {DOOR_CLOSE, DOOR_CLOSE};
 SM_instructions instructions = {O_NONE, O_NONE, false};
 SM_train train_state = {colour_sensor, motor, door, instructions};
-
-unsigned long emergency_last_tx = millis();
-unsigned int emergency_ping_timer = 1000;
 
 
 // function declaration.
@@ -61,12 +61,13 @@ void print_speed();
 
 //#define NO_COLOUR_SENSOR      // comment out when running WITHOUT> sensor connected to the board
 //#define SERIAL_MONITOR_INPUT  // comment out when <NOT> accepting Serial monitor inputs
-#define DEBUG_MODE  true
+//#define DEBUG_MODE  true      // comment out for final upload
 
+#ifdef DEBUG_MODE
 unsigned long print_timer = millis();
 unsigned int print_period = 4000;
 int p_counter = 0;
-
+#endif
 
 /********************************************************************************/
 /********************************************************************************/
@@ -119,7 +120,6 @@ void loop() {
     train_state.colour_sensor.current_colour = c;
     train_state.colour_sensor.colour_updated = true;
   }
-  
   #endif
   
   // update state machine
@@ -557,7 +557,6 @@ void do_state_transition() {
           train_state.motor.current_speed = train_state.motor.next_speed;
           train_state.motor.current_state = train_state.motor.next_state;
           if (starting) {      
-//            train_state.instruction.current_instruction = O_NONE;
             send_go();
           }
           
@@ -648,7 +647,6 @@ void do_state_transition() {
           train_state.door.current_state = train_state.door.next_state;
           if (train_state.instruction.current_instruction == O_CLOSE) {
             send_doors_closed();
-  //          train_state.instruction.current_instruction = O_NONE;
           }        
         }
         break;
@@ -674,17 +672,18 @@ void train_init() {
 
 void do_emergency() {
   // TODO: engage e-brakes instead of using motor to stop
-  
-  // force stop via aggressive motor control
   bool success = false;
-  while (!success) {
-    success = motor_stop(&train_state.motor);
-  }
 
+  // force stop via aggressive motor control
+  // pulse brakes until stopped
   // Transmit emergency signal to control box periodically
-  emergency_last_tx = millis();
+  unsigned long emergency_last_tx = millis();
   while (true) {
-    if (millis() - emergency_last_tx >= emergency_ping_timer) {
+    if (!success) {
+      success = motor_brake(&train_state.motor);
+      brakes_pulse();
+    }
+    if (millis() - emergency_last_tx >= EMERGENCY_PING_TIMER) {
       send_emergency();
       emergency_last_tx = millis();
     }
@@ -699,6 +698,7 @@ void do_emergency() {
 /********************************************************************************/
 /********************************************************************************/
 
+#ifdef DEBUG_MODE
 void print_counter() {
   p_counter += 1;
   Serial.println("--------------------------");
@@ -825,3 +825,5 @@ void print_instruction() {
       break;
   }
 }
+
+#endif
