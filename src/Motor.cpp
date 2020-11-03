@@ -151,7 +151,7 @@ bool motor_slow(SM_motor *sm) {
   motor_direction d = sm->current_direction;
   int d2 = get_direction(d);
 
-  Dir_Speed(d2, 100);
+  Dir_Speed(d2, 60);
   bool s = motor_start();
   return s;
 }
