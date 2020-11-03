@@ -15,10 +15,12 @@ unsigned long previousMillis;
 void MetroDoor_init(int pin)
 {
     my_door.attach(pin);
-    closed = false;
+    closed = true;
     opened = false;
     state = 0;
     hook = 0;
+
+    close_door();
 }
 
 bool open_door()
@@ -47,11 +49,10 @@ void compute(int val) // 1 = open; -1 = close;
 
     if (val == 1 && state == 0)
     {
-
         previousMillis = currentMillis;
         state = 1;
         hook = val;
-        my_door.writeMicroseconds(1600);
+        my_door.writeMicroseconds(1600);    
     }
     else if (val == -1 && state == 0)
     {
@@ -61,7 +62,7 @@ void compute(int val) // 1 = open; -1 = close;
         my_door.writeMicroseconds(1400);
     }
 
-    if (currentMillis - previousMillis >= 5000)
+    if (currentMillis - previousMillis >= 3000)
     {
         state = 0;
         my_door.writeMicroseconds(1500);
