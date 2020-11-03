@@ -571,7 +571,20 @@ void do_state_transition() {
           send_stop();
 
           // change direction if needed
-          train_state.motor.current_direction = train_state.motor.next_direction;
+          if (train_state.motor.current_direction != train_state.motor.next_direction) {
+            train_state.motor.current_direction = train_state.motor.next_direction;
+            switch (train_state.motor.current_direction) {
+              case M_EAST:
+                send_east();
+                break;
+              case M_WEST:
+                send_west();
+                break;
+              default:
+                break;
+            }           
+          }
+          
 
           // direction has changed due to yellow, send update to control box
           if (train_state.colour_sensor.last_colour == CS_YELLOW || train_state.colour_sensor.current_colour == CS_YELLOW) {
