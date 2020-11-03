@@ -86,6 +86,9 @@ void setup() {
   Motor_init(MOTOR_PIN);
   MetroDoor_init(DOOR_PIN);
 
+
+  delay(2000);
+
   send_west();
   send_doors_closed();
   send_stop();
@@ -117,7 +120,13 @@ void loop() {
   // colour sensor
   // function stalls/takes ~2100ms when not receiving any input data
   #ifndef NO_COLOUR_SENSOR
-  check_colour_sensor(&colour_sensor);
+  sensor_colour c = check_colour_sensor(&colour_sensor);
+  if(c != train_state.colour_sensor.current_colour) {
+    train_state.colour_sensor.current_colour = train_state.colour_sensor.last_colour;
+    train_state.colour_sensor.current_colour = c;
+    train_state.colour_sensor.colour_updated = true;
+  }
+  
   #endif
   
   // update state machine
@@ -159,6 +168,9 @@ void loop() {
  * 
  */
 void update_operator_instruction(message new_instruction) {
+  if(debug_mode) {
+    Serial.println((message)new_instruction);
+  }
 
   switch (new_instruction) {
     case NONE:
