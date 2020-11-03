@@ -48,14 +48,14 @@ sensor_colour readColour() {
   // Reading the output frequency
   B = pulseIn(COLOUROUT, LOW);
   
+  
+  //Serial.print(R);
+  //Serial.print("  ");
+  //Serial.print(G);
+  //Serial.print("  ");
+  //Serial.println(B);
+  
   /*
-  Serial.print(R);
-  Serial.print("  ");
-  Serial.print(G);
-  Serial.print("  ");
-  Serial.println(B);
-  */
-
   //need to play around with values
   if((R>5)  & (R<20) & 
      (G>21) & (G<65) & 
@@ -84,7 +84,36 @@ sensor_colour readColour() {
     //Serial.println("Yellow");
     return CS_YELLOW;
   }
+  */
 
+  //need to play around with values
+  if((R>0)  & (R<18) & 
+     (G>25) & (G<45) & 
+     (B>16) & (B<36)) {
+    //Serial.println("Red");
+    return CS_RED;
+  }
+  else 
+  if((R>17)  & (R<27) & 
+     (G>5) & (G<15) & 
+     (B>0)  & (B<15)){
+    //Serial.println("Blue");
+    return CS_BLUE;
+  }
+  else 
+  if((R>8) & (R<18) & 
+     (G>5) & (G<15) & 
+     (B>13) & (B<23)){
+    //Serial.println("Green");
+    return CS_GREEN;
+  }
+  else 
+  if((R>1) & (R<11) & 
+     (G>2) & (G<12) & 
+     (B>6) & (B<16)){
+    //Serial.println("Yellow");
+    return CS_YELLOW;
+  }
   //Serial.println("None");
   return CS_NONE;
 
@@ -93,19 +122,37 @@ sensor_colour readColour() {
 
 
 // check if there is a change in colour reading from the sensor
-bool check_colour_sensor(SM_colour_sensor *colour_sensor) {
-  sensor_colour colour_in = readColour();
+sensor_colour check_colour_sensor(SM_colour_sensor *colour_sensor) {
 
+  int store[] = {0, 0, 0, 0, 0};
+  int poll_count;
+  sensor_colour colour_in;
+
+  for (poll_count = 5; poll_count > 0; poll_count = poll_count - 1) {
+    colour_in = readColour();
+    store[colour_in] = store[colour_in]  + 1;
+  }
+
+  colour_in = CS_NONE;
+  int c;
+  for (c=1; c<5; c=c+1){
+    if (store[c] > store[colour_in]) {
+      colour_in = (sensor_colour)c;
+    }
+  }
+  
+  
+  
   // no colour change
   if (colour_sensor->current_colour == colour_in) {
     colour_sensor->colour_updated = false;
-    return false;
+    return colour_in;
   } else {
     // 
     colour_sensor->colour_updated = true;
     colour_sensor->last_colour = colour_sensor->current_colour;
-    colour_sensor->last_colour = colour_in;
-    return true;
+    colour_sensor->current_colour = colour_in;    
+    return colour_in;
   }
-  return false;
+  return CS_NONE;
 }
