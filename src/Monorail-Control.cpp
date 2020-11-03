@@ -8,9 +8,7 @@
 
 
 #include "BTInterface.h"
-// temporary change of serial port for testing on Uno (no second hardware serial port)
 bt_interface bt_i = {4, "INIT", &Serial3};
-//bt_interface bt_i = {4, "INIT", &Serial};
 #include "Helpers.h"
 
 
@@ -61,10 +59,10 @@ void print_speed();
 /********************************************************************************/
 // Testing stuffs
 
-#define NO_COLOUR_SENSOR      // comment out when running with sensor connected to the board
-#define SERIAL_MONITOR_INPUT  // comment out when not using Serial monitor to input data to emulate sensor readings 
+//#define NO_COLOUR_SENSOR      // comment out when running WITHOUT> sensor connected to the board
+//#define SERIAL_MONITOR_INPUT  // comment out when <NOT> accepting Serial monitor inputs
+#define DEBUG_MODE  true
 
-bool debug_mode = true;
 unsigned long print_timer = millis();
 unsigned int print_period = 4000;
 int p_counter = 0;
@@ -101,14 +99,6 @@ void setup() {
 /********************************************************************************/
 
 void loop() {
-  if (debug_mode) {
-    message test_input = testing_mode_read_message();
-    if (test_input) {
-      update_operator_instruction(test_input);
-    }
-  }
-
-  
   // check BLE
   message bt_inc = read_msg();
   if (bt_inc) {
@@ -121,8 +111,11 @@ void loop() {
   // function stalls/takes ~2100ms when not receiving any input data
   #ifndef NO_COLOUR_SENSOR
   sensor_colour c = check_colour_sensor(&colour_sensor);
+
+  // Colour sensor function is not updating sensor states with given pointer
+  // hotfix solution - sensor function passes back colour (as enum sensor_colour)
   if(c != train_state.colour_sensor.current_colour) {
-    train_state.colour_sensor.current_colour = train_state.colour_sensor.last_colour;
+    train_state.colour_sensor.last_colour = train_state.colour_sensor.current_colour;
     train_state.colour_sensor.current_colour = c;
     train_state.colour_sensor.colour_updated = true;
   }
@@ -138,22 +131,23 @@ void loop() {
 
 
   // DEBUG
-  if (debug_mode) {
-    if (millis() - print_timer >= print_period) {
-      print_timer = millis();
-      
-      print_counter();
-      print_instruction();  // current instruction from operator to be executed
-      print_colour();       // most recent colour from the sensor
-      print_motor();        // whether motor is stopped or moving
-      print_speed();        // fast, slow, stopped/idle
-      print_direction();    // east or west
-      print_door();         // open or closed
+  #ifdef DEBUG_MODE
+  if (millis() - print_timer >= print_period) {
+    print_timer = millis();
+    
+    print_counter();
+    print_instruction();  // current instruction from operator to be executed
+    print_colour();       // most recent colour from the sensor
+    print_motor();        // whether motor is stopped or moving
+    print_speed();        // fast, slow, stopped/idle
+    print_direction();    // east or west
+    print_door();         // open or closed
 
-      Serial.println();
+    Serial.println();
 
-    }
   }
+  #endif
+  
   
 }
 
@@ -168,10 +162,6 @@ void loop() {
  * 
  */
 void update_operator_instruction(message new_instruction) {
-  if(debug_mode) {
-    Serial.println((message)new_instruction);
-  }
-
   switch (new_instruction) {
     case NONE:
       train_state.instruction.current_instruction = O_NONE;
@@ -199,13 +189,13 @@ void update_operator_instruction(message new_instruction) {
       do_emergency();
       break;
     default:
-      if (debug_mode) {
-        #ifndef SERIAL_MONITOR_INPUT  // stop test inputs from Serial Moniotr from triggering error message
-        Serial.println("update_operator_instruction() - Received non operator instruction");
-        Serial.print("Received message:  ");
-        Serial.println(new_instruction);
-        #endif
-      }
+      #ifdef DEBUG_MODE
+      #ifndef ALLOW_SERIAL_MONITOR_INPUT  // stop test inputs from Serial Moniotr from triggering error message
+      Serial.println("update_operator_instruction() - Received non operator instruction");
+      Serial.print("Received message:  ");
+      Serial.println(new_instruction);
+      #endif
+      #endif
       break;
 
   }
@@ -213,7 +203,7 @@ void update_operator_instruction(message new_instruction) {
   //////
   // Single char values for inputs via serial monitor to emulate data inputs from sensors 
   // and peripherals. For testing without hardware
-  //#ifdef SERIAL_MONITOR_INPUT
+  #ifdef ALLOW_SERIAL_MONITOR_INPUT
   switch ((int)new_instruction) {
     case 48:  // key:0 meaning:NONE
       train_state.instruction.current_instruction = O_NONE;
@@ -294,15 +284,16 @@ void update_operator_instruction(message new_instruction) {
     case 6:   // ACK  
       break;
     default:
-      if (debug_mode) {
-        Serial.println("--------------------------");
-        Serial.println("ERROR - update_operator_instruction() - read invalid instruction");
-        Serial.println(new_instruction);
-        Serial.println("--------------------------");
-      }
+      #ifdef DEBUG_MODE
+      Serial.println("--------------------------");
+      Serial.println("ERROR - update_operator_instruction() - read invalid instruction");
+      Serial.print("Instruction ASCII value:  ");
+      Serial.println(new_instruction);
+      Serial.println("--------------------------");
       break;
+      #endif
   }
-  //#endif
+  #endif
 
 }
 
@@ -316,20 +307,6 @@ void update_operator_instruction(message new_instruction) {
 void ready_next_state() {  
 
   /////
-  // Start moving
-  // Band-aid solution to state transition that was overlooked
-  /*
-  if (train_state.instruction.current_instruction == O_START){
-    if (train_state.door.current_state == DOOR_CLOSE) {
-      train_state.motor.next_state = M_START;
-      train_state.motor.next_speed = M_SLOW;
-      train_state.motor.target_speed = M_SLOW;
-    }    
-  }
-  */
-
-
-  /////
   // If colour sensor detects a change in colour
   if (train_state.colour_sensor.colour_updated == true) {
     switch (train_state.colour_sensor.current_colour) {
@@ -341,7 +318,7 @@ void ready_next_state() {
       // Train is at the station
       // Check if the operator has sent STOP or 
       // EAST/WEST message that requires a change in direction
-      
+        if (train_state.colour_sensor.colour_updated == false) {break;}
         train_state.colour_sensor.colour_updated = false;
         
         switch(train_state.instruction.current_instruction) {
@@ -349,7 +326,7 @@ void ready_next_state() {
             train_state.motor.next_state = M_STOP;
             train_state.motor.next_speed = M_IDLE;
             train_state.motor.target_speed = M_IDLE;
-//            train_state.instruction.current_instruction = O_NONE;
+            break;
 
           case O_EAST:
             if (train_state.motor.current_direction != M_EAST) {
@@ -468,13 +445,13 @@ void ready_next_state() {
       case M_FAST:
         train_state.motor.next_state = M_START;
         train_state.motor.next_speed = M_SLOW;
-//        train_state.motor.target_speed = M_IDLE;
         break;
+
       case M_SLOW:
         train_state.motor.next_state = M_STOP;
         train_state.motor.next_speed = M_IDLE;
-//        train_state.motor.target_speed = M_IDLE;
         break;
+
       case M_IDLE:  
         // train has stopped, direction can be changed on next transition
         break;
