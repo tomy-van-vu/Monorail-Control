@@ -9,13 +9,13 @@
 
 #include "BTInterface.h"
 // temporary change of serial port for testing on Uno (no second hardware serial port)
-//bt_interface bt_i = {4, "INIT", &Serial2};
-bt_interface bt_i = {4, "INIT", &Serial};
+bt_interface bt_i = {4, "INIT", &Serial3};
+//bt_interface bt_i = {4, "INIT", &Serial};
 #include "Helpers.h"
 
 
 #define BAUD_RATE     9600
-#define BLE_PIN       4
+#define BLE_PIN       15
 #define MOTOR_PIN     9
 #define COLOUR_IN_S2  A4
 #define COLOUR_IN_S3  A3
@@ -32,7 +32,7 @@ typedef struct {
 
 // SM declarations
 SM_colour_sensor colour_sensor = {CS_NONE, CS_NONE, false};
-SM_motor motor = {M_STOP, M_STOP, M_IDLE, M_IDLE, M_IDLE, M_EAST, M_EAST, 0};
+SM_motor motor = {M_STOP, M_STOP, M_IDLE, M_IDLE, M_IDLE, M_WEST, M_WEST, 0};
 SM_door door = {DOOR_CLOSE, DOOR_CLOSE};
 SM_instructions instructions = {O_NONE, O_NONE, false};
 SM_train train_state = {colour_sensor, motor, door, instructions};
@@ -61,7 +61,7 @@ void print_speed();
 /********************************************************************************/
 // Testing stuffs
 
-//#define NO_COLOUR_SENSOR      // comment out when running with sensor connected to the board
+#define NO_COLOUR_SENSOR      // comment out when running with sensor connected to the board
 #define SERIAL_MONITOR_INPUT  // comment out when not using Serial monitor to input data to emulate sensor readings 
 
 bool debug_mode = true;
@@ -78,12 +78,17 @@ int p_counter = 0;
 
 void setup() {
   Serial.begin(BAUD_RATE);
-//  Serial2.begin(BAUD_RATE);
-  // put your setup code here, to run once:
+  Serial3.begin(BAUD_RATE);
+  
+  
   pinMode(BLE_PIN, INPUT);
   colour_sensor_init(COLOUR_IN_S2, COLOUR_IN_S3, COLOUR_OUT_1);
   Motor_init(MOTOR_PIN);
   MetroDoor_init(DOOR_PIN);
+
+  send_west();
+  send_doors_closed();
+  send_stop();
 }
 
 /********************************************************************************/
@@ -93,12 +98,21 @@ void setup() {
 /********************************************************************************/
 
 void loop() {
+  if (debug_mode) {
+    message test_input = testing_mode_read_message();
+    if (test_input) {
+      update_operator_instruction(test_input);
+    }
+  }
+
+  
   // check BLE
-  //message bt_inc = read_msg();
-  message bt_inc = testing_mode_read_message();
+  message bt_inc = read_msg();
   if (bt_inc) {
     update_operator_instruction(bt_inc);
-  }
+  } 
+  
+  
   
   // colour sensor
   // function stalls/takes ~2100ms when not receiving any input data
@@ -115,7 +129,7 @@ void loop() {
 
 
   // DEBUG
-  if (!debug_mode) {
+  if (debug_mode) {
     if (millis() - print_timer >= print_period) {
       print_timer = millis();
       
@@ -131,7 +145,7 @@ void loop() {
 
     }
   }
-
+  
 }
 
 
@@ -159,7 +173,7 @@ void update_operator_instruction(message new_instruction) {
     case START:
       train_state.instruction.current_instruction = O_START;
       break;
-    case STOP:
+    case STOP:      
       train_state.instruction.current_instruction = O_STOP;
       break;
     case OPEN:
@@ -187,7 +201,7 @@ void update_operator_instruction(message new_instruction) {
   //////
   // Single char values for inputs via serial monitor to emulate data inputs from sensors 
   // and peripherals. For testing without hardware
-  #ifdef SERIAL_MONITOR_INPUT
+  //#ifdef SERIAL_MONITOR_INPUT
   switch ((int)new_instruction) {
     case 48:  // key:0 meaning:NONE
       train_state.instruction.current_instruction = O_NONE;
@@ -242,14 +256,41 @@ void update_operator_instruction(message new_instruction) {
       train_state.colour_sensor.colour_updated = true;
       break;
 
+    case 102:  // key:f
+      send_stop();
+      break;
+    case 103:  // key:g
+      send_go();
+      break;
+    case 104:  // key:h
+      send_east();
+      break;
+    case 105:  // key:i
+      send_west();
+      break;
+    case 106:  // key:j
+    send_doors_open();
+      break;
+    case 107:  // key:k
+      send_doors_closed();
+      break;
+
+    case 2:   // STX
+    case 3:   // ETX
+    case 4:   // EOT
+    case 5:   // ENQ
+    case 6:   // ACK  
+      break;
     default:
       if (debug_mode) {
+        Serial.println("--------------------------");
         Serial.println("ERROR - update_operator_instruction() - read invalid instruction");
         Serial.println(new_instruction);
+        Serial.println("--------------------------");
       }
       break;
   }
-  #endif
+  //#endif
 
 }
 
@@ -296,7 +337,7 @@ void ready_next_state() {
             train_state.motor.next_state = M_STOP;
             train_state.motor.next_speed = M_IDLE;
             train_state.motor.target_speed = M_IDLE;
-            train_state.instruction.current_instruction = O_NONE;
+//            train_state.instruction.current_instruction = O_NONE;
 
           case O_EAST:
             if (train_state.motor.current_direction != M_EAST) {
@@ -527,7 +568,7 @@ void do_state_transition() {
           train_state.motor.current_speed = train_state.motor.next_speed;
           train_state.motor.current_state = train_state.motor.next_state;
           if (starting) {      
-            train_state.instruction.current_instruction = O_NONE;
+//            train_state.instruction.current_instruction = O_NONE;
             send_go();
           }
           
@@ -599,31 +640,35 @@ void do_state_transition() {
   
   /////
   // door
-  success = false;
-  switch(train_state.door.next_state) {
-    case DOOR_OPEN:
-      success = open_door();
-      if (success) {
-        train_state.door.current_state = train_state.door.next_state;
-        if (train_state.instruction.current_instruction == O_OPEN) {
-          send_doors_open();
-          train_state.instruction.current_instruction = O_NONE;
+  if (train_state.door.current_state != train_state.door.next_state){
+    success = false;
+    switch(train_state.door.next_state) {
+      case DOOR_OPEN:
+        success = open_door();
+        if (success) {
+          train_state.door.current_state = train_state.door.next_state;
+          if (train_state.instruction.current_instruction == O_OPEN) {
+            send_doors_open();
+            train_state.instruction.current_instruction = O_NONE;
+          }
         }
-      }
-      break;
-    case DOOR_CLOSE:
-      success = close_door();
-      if (success) {
-        train_state.door.current_state = train_state.door.next_state;
-        if (train_state.instruction.current_instruction == O_CLOSE) {
-          send_doors_closed();
-          train_state.instruction.current_instruction = O_NONE;
-        }        
-      }
-      break;
-    default:
-      break;
+        break;
+      case DOOR_CLOSE:
+        success = close_door();
+        if (success) {
+          train_state.door.current_state = train_state.door.next_state;
+          if (train_state.instruction.current_instruction == O_CLOSE) {
+            send_doors_closed();
+  //          train_state.instruction.current_instruction = O_NONE;
+          }        
+        }
+        break;
+      default:
+        break;
+    }    
   }
+  
+
 
 }
 
