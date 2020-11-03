@@ -43,6 +43,7 @@ void motorwrite();     // function to write to the motor.
 bool motor_fast(SM_motor *);
 bool motor_slow(SM_motor *);
 bool motor_stop(SM_motor *);
+bool motor_brake(SM_motor *);
 int get_direction(motor_direction);
 
 

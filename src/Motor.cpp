@@ -145,6 +145,8 @@ bool motor_stop(SM_motor *sm) {
   return s;
 }
 
+
+
 bool motor_slow(SM_motor *sm) {
   motor_direction d = sm->current_direction;
   int d2 = get_direction(d);
@@ -163,6 +165,13 @@ int get_direction(motor_direction md) {
   
   return 0;
 }
+
+bool motor_brake(SM_motor *sm)
+{
+  my_motor.write(1500);
+  return true;
+}
+
 /*
 void Motor::SetDistance(long var)
 {
