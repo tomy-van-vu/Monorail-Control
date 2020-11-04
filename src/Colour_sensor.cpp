@@ -48,13 +48,16 @@ sensor_colour readColour() {
   // Reading the output frequency
   B = pulseIn(COLOUROUT, LOW);
   
-  
-  //Serial.print(R);
-  //Serial.print("  ");
-  //Serial.print(G);
-  //Serial.print("  ");
-  //Serial.println(B);
-  
+  /*
+  Serial.print(R);
+  Serial.print("  ");
+  Serial.print(G);
+  Serial.print("  ");
+  Serial.println(B);
+  */
+
+
+   //////////// These are track values
   /*
   //need to play around with values
   if((R>5)  & (R<20) & 
@@ -86,37 +89,45 @@ sensor_colour readColour() {
   }
   */
 
+
+ int vrange = 9;
+
+ bool print_c = true;
+
+  
+  //////////// These are test values
+  
   //need to play around with values
-  if((R>0)  & (R<18) & 
-     (G>25) & (G<45) & 
-     (B>16) & (B<36)) {
-    //Serial.println("Red");
+  if((R>14-vrange) & (R<14+vrange) & 
+     (G>47-vrange) & (G<47+vrange) & 
+     (B>37-vrange) & (B<37+vrange)) {
+    if(print_c) {Serial.println("Red");}
     return CS_RED;
   }
   else 
-  if((R>17)  & (R<27) & 
-     (G>5) & (G<15) & 
-     (B>0)  & (B<15)){
-    //Serial.println("Blue");
-    return CS_BLUE;
-  }
-  else 
-  if((R>8) & (R<18) & 
-     (G>5) & (G<15) & 
-     (B>13) & (B<23)){
-    //Serial.println("Green");
+  if((R>23-vrange) & (R<23+vrange) & 
+     (G>16-vrange) & (G<16+vrange) & 
+     (B>26-vrange) & (B<26+vrange)){
+    if(print_c) {Serial.println("Green");}
     return CS_GREEN;
   }
   else 
-  if((R>1) & (R<11) & 
-     (G>2) & (G<12) & 
-     (B>6) & (B<16)){
-    //Serial.println("Yellow");
+  if((R>8-vrange)  & (R<8+vrange) & 
+     (G>10-vrange)  & (G<10+vrange) & 
+     (B>17-vrange) & (B<17+vrange)){
+    if(print_c) {Serial.println("Yellow");}
     return CS_YELLOW;
   }
-  //Serial.println("None");
+  else 
+  if((R>37-vrange)  & (R<37+vrange) & 
+     (G>19-vrange)  & (G<19+vrange) & 
+     (B>11-vrange)  & (B<11+vrange)){
+    if(print_c) {Serial.println("Blue");}
+    return CS_BLUE;
+  }
+  if(print_c) {Serial.println("None");}
   return CS_NONE;
-
+  
 }
 
 
