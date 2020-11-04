@@ -1,0 +1,37 @@
+Reference for Serial Monitor inputs
+State machine reads in and treats the data as inputs from peripherals
+
+
+OPERATOR INSTRUCTIONS
+For emulating receiving instructions via bluetooth link
+0	NONE
+1	EAST
+2	WEST
+3	START
+4	STOP
+5	OPEN
+6	CLOSE
+7	EMERGENCY
+
+
+
+COLOUR SENSORS
+For emulating colour sensor detecting colours
+a	NO_COLOUR
+b	RED
+c	GREEN
+d	BLUE
+e	YELLOW
+
+
+
+
+
+
+
+
+
+
+
+
+
