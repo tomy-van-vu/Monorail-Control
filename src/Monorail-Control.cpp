@@ -19,7 +19,7 @@ bt_interface bt_i = {4, "INIT", &Serial3};
 #define COLOUR_IN_S3  A3
 #define COLOUR_OUT_1  A5
 #define DOOR_PIN      10
-#define SOLENOID_PIN  5
+#define SOLENOID_PIN  6
 
 #define EMERGENCY_PING_TIMER 1000 // ms, interval to transmite emergency signal to the control box
 
@@ -60,9 +60,9 @@ void print_speed();
 /********************************************************************************/
 // Testing stuffs
 
-//#define NO_COLOUR_SENSOR      // comment out when running WITHOUT> sensor connected to the board
-//#define SERIAL_MONITOR_INPUT  // comment out when <NOT> accepting Serial monitor inputs
-//#define DEBUG_MODE  true      // comment out for final upload
+#define NO_COLOUR_SENSOR      // comment out when running WITHOUT> sensor connected to the board
+#define ALLOW_SERIAL_MONITOR_INPUT  // comment out when <NOT> accepting Serial monitor inputs
+#define DEBUG_MODE  true      // comment out for final upload
 
 #ifdef DEBUG_MODE
 unsigned long print_timer = millis();
@@ -100,7 +100,7 @@ void setup() {
 /********************************************************************************/
 /********************************************************************************/
 unsigned long update = millis();
-unsigned int update_period = 1000;
+unsigned int update_period = 20000;
 
 void loop() {
 
@@ -115,6 +115,12 @@ void loop() {
     update_operator_instruction(bt_inc);
   } 
   
+  #ifdef DEBUG_MODE
+  message serial_inc = testing_mode_read_message();
+  if (serial_inc) {
+    update_operator_instruction(serial_inc);
+  }
+  #endif 
   
   
   // colour sensor
@@ -171,7 +177,7 @@ void loop() {
  * 
  */
 void update_operator_instruction(message new_instruction) {
-  Serial.println(new_instruction);
+  //Serial.println(new_instruction);
   switch (new_instruction) {
     case NONE:
       train_state.instruction.current_instruction = O_NONE;
