@@ -45,6 +45,7 @@ void do_state_transition();
 void ready_next_state();
 void train_init();
 void update_operator_instruction(message);
+void send_state_update();
 
 // Read state machine, print current values for debugging/testin
 void print_colour();
@@ -98,8 +99,16 @@ void setup() {
 /********************************    LOOP    ************************************/
 /********************************************************************************/
 /********************************************************************************/
+unsigned long update = millis();
+unsigned int update_period = 1000;
 
 void loop() {
+
+  if (millis() - update >= update_period) {
+    send_state_update();
+    update = millis();
+  }
+
   // check BLE
   message bt_inc = read_msg();
   if (bt_inc) {
@@ -162,6 +171,7 @@ void loop() {
  * 
  */
 void update_operator_instruction(message new_instruction) {
+  Serial.println(new_instruction);
   switch (new_instruction) {
     case NONE:
       train_state.instruction.current_instruction = O_NONE;
@@ -703,6 +713,41 @@ void do_emergency() {
   }
 }
 
+
+void send_state_update() {
+  switch(train_state.motor.current_direction) {
+    case M_EAST:
+      send_east();
+      break;
+    case M_WEST:
+      send_west();
+      break;
+    default:
+      break;
+  }
+
+  switch(train_state.door.current_state) {
+    case DOOR_OPEN:
+      send_doors_open();
+      break;
+    case DOOR_CLOSE:
+      send_doors_closed();
+      break;
+    default:
+      break;
+  }  
+
+    switch(train_state.motor.current_state) {
+    case M_START:
+      send_go();
+      break;
+    case M_STOP:
+      send_stop();
+      break;
+    default:
+      break;
+  }  
+}
 
 
 /********************************************************************************/
